@@ -1,32 +1,54 @@
 import { Server } from "socket.io";
+import Redis from "ioredis";
+
+const pub = new Redis({
+  host: "",
+  port: 0,
+  username: "",
+  password: "",
+});
+const sub = new Redis({
+  host: "",
+  port: 0,
+  username: "",
+  password: "",
+});
+
+console.log(process.env.REDIS_HOST);
 
 class SocketService {
   private _io: Server;
 
   constructor() {
-    console.log("Init socket service...");
+    console.log("Init Socket Service...");
     this._io = new Server({
       cors: {
         allowedHeaders: ["*"],
         origin: "*",
       },
     });
+    sub.subscribe("MESSAGES");
   }
 
   public initListeners() {
-    const io = this._io;
-    console.log("Init socket listeners...");
-    io.on("connect", async (socket) => {
-      console.log("New socket connection", socket.id);
+    const io = this.io;
+    console.log("Init Socket Listeners...");
 
+    io.on("connect", (socket) => {
+      console.log(`New Socket Connected`, socket.id);
       socket.on("event:message", async ({ message }: { message: string }) => {
-        console.log("New message", message);
-        // io.emit("event:message", { message });
+        console.log("New Message Rec.", message);
+        // publish this message to redis
+        await pub.publish("MESSAGES", JSON.stringify({ message }));
       });
+    });
 
-      socket.on("disconnect", () => {
-        console.log("Socket disconnected", socket.id);
-      });
+    sub.on("message", async (channel, message) => {
+      if (channel === "MESSAGES") {
+        console.log("new message from redis", message);
+        io.emit("message", message);
+        console.log("Message Produced to Kafka Broker");
+      }
     });
   }
 

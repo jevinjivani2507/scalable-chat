@@ -7,6 +7,8 @@ export default function Page() {
   const { sendMessage, messages } = useSocket();
   const [message, setMessage] = useState("");
 
+  console.log("Messages", messages);
+
   return (
     <div>
       <div>
@@ -23,7 +25,7 @@ export default function Page() {
         </button>
       </div>
       <div>
-        {messages.map((e: any) => (
+        {messages.map((e) => (
           <li>{e}</li>
         ))}
       </div>
